@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerador de PDM Inteligente</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background-color: #f8f9fa; color: #212529; display: flex; justify-content: center; padding: 2rem; }
+        .container { background-color: #fff; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1); width: 100%; max-width: 900px; }
+        h1, h2 { text-align: center; color: #343a40; }
+        section { margin-bottom: 2rem; }
+        label { font-weight: 600; display: block; margin-bottom: 0.5rem; }
+        input[type="file"], input[type="text"], button, textarea { width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 0.25rem; font-size: 1rem; box-sizing: border-box; margin-bottom: 1rem; }
+        button { background-color: #007bff; color: white; font-weight: 600; border: none; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: #0056b3; }
+        #camposDinamicos .form-group { display: grid; grid-template-columns: 1fr 2fr; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+        #descricaoFinal { min-height: 100px; background-color: #e9ecef; }
+        .search-container { position: relative; }
+        #sugestoes { display: none; position: absolute; border: 1px solid #ccc; background-color: white; width: 100%; max-height: 200px; overflow-y: auto; z-index: 1000; box-sizing: border-box; }
+        #sugestoes div { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+        #sugestoes div:hover { background-color: #f0f0f0; }
+        hr { border: none; border-top: 1px solid #dee2e6; margin: 2rem 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gerador de PDM </h1>
+        
+        <section id="upload-section">
+            <h2>Atualizar Base Pdm</h2>
+            <p>Carregue a base pdm aegea 2025 (.xlsx) para atualizar os templates.</p>
+            <input type="file" id="fileInput" accept=".xlsx">
+            <button id="uploadButton">Processar e Atualizar Base</button>
+            <div id="uploadStatus" style="font-weight: bold;"></div>
+        </section>
+        <hr>
+        <section id="pdm-section">
+            <h2>Área do PDM</h2>
+            <div class="search-container">
+                <label for="classeInput">Buscar Classe de Material:</label>
+                <input type="text" id="classeInput" placeholder="Comece a digitar o nome da classe..." autocomplete="off">
+                <div id="sugestoes"></div>
+            </div>
+            
+            <div id="camposDinamicos"></div>
+            <button id="gerarButton" style="display:none;">Gerar Descrição Longa</button>
+            
+            <label for="descricaoFinal" style="margin-top: 1rem;">Descrição Longa Gerada:</label>
+            <textarea id="descricaoFinal" readonly placeholder="A descrição final aparecerá aqui..."></textarea>
+        </section>
+    </div>
+
+<script>
+    // --- ELEMENTOS DA PÁGINA ---
+    const fileInput = document.getElementById('fileInput');
+    const uploadButton = document.getElementById('uploadButton');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const classeInput = document.getElementById('classeInput');
+    const sugestoesDiv = document.getElementById('sugestoes');
+    const camposDinamicos = document.getElementById('camposDinamicos');
+    const gerarButton = document.getElementById('gerarButton');
+    const descricaoFinal = document.getElementById('descricaoFinal');
+    let classeSelecionada = '';
+
+    // --- LÓGICA DE UPLOAD COM REDIRECIONAMENTO ---
+    uploadButton.addEventListener('click', () => {
+        const arquivo = fileInput.files[0];
+        if (!arquivo) {
+            uploadStatus.textContent = 'Por favor, selecione um arquivo.';
+            uploadStatus.style.color = 'red';
+            return;
+        }
+        const formData = new FormData();
+        formData.append('arquivo', arquivo);
+        uploadStatus.textContent = 'Enviando e processando...';
+        uploadStatus.style.color = 'blue';
+
+        fetch('/admin/upload', { method: 'POST', body: formData })
+            .then(response => response.text().then(text => ({ ok: response.ok, text })))
+            .then(({ ok, text }) => {
+                uploadStatus.textContent = text;
+                uploadStatus.style.color = ok ? 'green' : 'red';
+                
+                // ### LÓGICA DE REDIRECIONAMENTO ADICIONADA AQUI ###
+                if (ok) {
+                    uploadStatus.textContent += ' A página será recarregada em 3 segundos...';
+                    setTimeout(() => {
+                        window.location.href = '/'; // Recarrega a página principal
+                    }, 3000); // 3 segundos
+                }
+            })
+            .catch(err => {
+                uploadStatus.textContent = 'Erro ao processar o arquivo.';
+                uploadStatus.style.color = 'red';
+                console.error(err);
+            });
+    });
+
+    // --- LÓGICA DE BUSCA DO ANALISTA (sem alterações) ---
+    classeInput.addEventListener('keyup', (e) => {
+        const query = e.target.value;
+        if (query.length < 3) {
+            sugestoesDiv.style.display = 'none';
+            return;
+        }
+        fetch(`/sugerirClasses?query=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(sugestoes => {
+                sugestoesDiv.innerHTML = '';
+                if (sugestoes.length > 0) {
+                    sugestoesDiv.style.display = 'block';
+                    sugestoes.forEach(s => {
+                        const item = document.createElement('div');
+                        item.textContent = s;
+                        item.addEventListener('click', () => selecionarClasse(s));
+                        sugestoesDiv.appendChild(item);
+                    });
+                } else {
+                    sugestoesDiv.style.display = 'none';
+                }
+            });
+    });
+
+    function selecionarClasse(classe) {
+        classeSelecionada = classe;
+        classeInput.value = classe;
+        sugestoesDiv.style.display = 'none';
+        fetch(`/getAtributos?classe=${encodeURIComponent(classe)}`)
+            .then(response => response.json())
+            .then(atributos => {
+                camposDinamicos.innerHTML = '';
+                if (atributos && atributos.length > 0) {
+                    atributos.forEach(attr => {
+                        const group = document.createElement('div'); group.className = 'form-group';
+                        const label = document.createElement('label'); label.textContent = `${attr}:`;
+                        const input = document.createElement('input'); input.type = 'text'; input.dataset.atributo = attr;
+                        group.appendChild(label); group.appendChild(input);
+                        camposDinamicos.appendChild(group);
+                    });
+                    gerarButton.style.display = 'block';
+                }
+            });
+    }
+
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.search-container')) {
+            sugestoesDiv.style.display = 'none';
+        }
+    });
+
+    gerarButton.addEventListener('click', () => {
+        const inputs = camposDinamicos.querySelectorAll('input[type="text"]');
+        const valores = {};
+        inputs.forEach(input => { valores[input.dataset.atributo] = input.value; });
+        const payload = { classe: classeSelecionada, valores: valores };
+        fetch('/gerarDescricao', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+            .then(response => response.json())
+            .then(data => { descricaoFinal.value = data.descricao; });
+    });
+</script>
+</body>
+</html>
