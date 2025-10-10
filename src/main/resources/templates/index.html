@@ -147,15 +147,29 @@
         }
     });
 
-    gerarButton.addEventListener('click', () => {
-        const inputs = camposDinamicos.querySelectorAll('input[type="text"]');
-        const valores = {};
-        inputs.forEach(input => { valores[input.dataset.atributo] = input.value; });
-        const payload = { classe: classeSelecionada, valores: valores };
-        fetch('/gerarDescricao', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-            .then(response => response.json())
-            .then(data => { descricaoFinal.value = data.descricao; });
-    });
+	gerarButton.addEventListener('click', () => {
+	    const inputs = camposDinamicos.querySelectorAll('input[type="text"]');
+	    const valores = {};
+	    inputs.forEach(input => {
+	        valores[input.dataset.atributo] = input.value;
+	    });
+	    
+	    const payload = {
+	        classe: classeSelecionada,
+	        valores: valores
+	    };
+	    console.log("Payload a ser enviado para o backend:", payload);
+
+	    fetch('/gerarDescricao', {
+	        method: 'POST',
+	        headers: { 'Content-Type': 'application/json' },
+	        body: JSON.stringify(payload)
+	    })
+	    .then(response => response.json())
+	    .then(data => {
+	        descricaoFinal.value = data.descricao;
+	    });
+	});
 </script>
 </body>
 </html>

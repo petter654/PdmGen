@@ -1,14 +1,18 @@
 package br.com.aegea.geradorpdm.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import br.com.aegea.geradorpdm.service.PdmService;
+import org.springframework.web.bind.annotation.CrossOrigin;	
+
 
 import java.util.List;
 import java.util.Map;
 
+@CrossOrigin
 @RestController
 public class ControllerPdm {
 

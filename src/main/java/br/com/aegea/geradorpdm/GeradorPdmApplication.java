@@ -1,4 +1,4 @@
-package br.com.aegea.geradorpdm; // Ou br.com.aegea.geradorpdm, o que for seu pacote principal
+package br.com.aegea.geradorpdm; 
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
