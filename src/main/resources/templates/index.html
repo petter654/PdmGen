@@ -1,175 +1,929 @@
 <!DOCTYPE html>
-<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Gerador de PDM Inteligente</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de PDM | AEGEA</title>
+    <meta name="description" content="Sistema automatizado para geração de descrições longas de materiais com base na base PDM AEGEA 2025">
     <style>
-        body { font-family: system-ui, sans-serif; background-color: #f8f9fa; color: #212529; display: flex; justify-content: center; padding: 2rem; }
-        .container { background-color: #fff; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1); width: 100%; max-width: 900px; }
-        h1, h2 { text-align: center; color: #343a40; }
-        section { margin-bottom: 2rem; }
-        label { font-weight: 600; display: block; margin-bottom: 0.5rem; }
-        input[type="file"], input[type="text"], button, textarea { width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 0.25rem; font-size: 1rem; box-sizing: border-box; margin-bottom: 1rem; }
-        button { background-color: #007bff; color: white; font-weight: 600; border: none; cursor: pointer; transition: background-color 0.2s; }
-        button:hover { background-color: #0056b3; }
-        #camposDinamicos .form-group { display: grid; grid-template-columns: 1fr 2fr; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
-        #descricaoFinal { min-height: 100px; background-color: #e9ecef; }
-        .search-container { position: relative; }
-        #sugestoes { display: none; position: absolute; border: 1px solid #ccc; background-color: white; width: 100%; max-height: 200px; overflow-y: auto; z-index: 1000; box-sizing: border-box; }
-        #sugestoes div { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
-        #sugestoes div:hover { background-color: #f0f0f0; }
-        hr { border: none; border-top: 1px solid #dee2e6; margin: 2rem 0; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --deep-blue: #0a1f44;
+            --royal-blue: #1e40af;
+            --light-blue: #3b82f6;
+            --aqua: #06b6d4;
+            --white: #ffffff;
+            --gray-light: #f8f9fa;
+            --gray: #e9ecef;
+            --gray-dark: #6b7280;
+        }
+
+		body {
+		    font-family: system-ui, -apple-system, sans-serif;
+		    color: #212529;
+		    scroll-behavior: smooth;
+
+		    /* gradiente entre as 3 cores */
+		    background: linear-gradient(
+		        170deg,
+		        #142157 0%,     /* topo (gerador) */
+		        #002e8e 70%,    /* meio (sobre) */
+		        #0cbccc 100%    /* final (devs) */
+		    );
+
+		    background-attachment: fixed; /* fixa o degradê */
+		    background-repeat: no-repeat;
+		    min-height: 100vh;
+		}
+
+
+
+        /* HEADER */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+             background: linear-gradient(135deg, #15297c, #0027BD, #00ffbe);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--white);
+            text-decoration: none;
+        }
+		.logo-container {
+		    display: flex;       /* coloca as imagens em linha */
+		    align-items: center; /* alinha verticalmente */
+		    gap: 1rem;           /* espaço entre as imagens */
+		}
+
+		.logo-img {
+		    height: 50px;        /* ajuste a altura */
+		    width: auto;         /* mantém proporção */
+		}
+
+		.logo-img {
+		    height: 50px; /* Ajuste a altura conforme necessário */
+		    width: auto;
+		    display: block;
+		}
+		.logo-img {
+		    background-color: transparent; /* fundo transparente */
+		}
+
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--light-blue), var(--aqua));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        nav {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            position: relative;
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link.active::after {
+            background: var(--white);
+        }
+
+        .nav-link:hover {
+            color: var(--aqua);
+        }
+
+        /* SECTIONS */
+        section {
+            min-height: 100vh;
+            padding: 6rem 2rem 4rem;
+			background: transparent;
+        }
+
+        .section-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: var(--white);
+        }
+
+        /* GERADOR SECTION */
+        #gerador {
+			background: transparent;
+            /*background: #002e8e*/
+        }
+
+        .generator-card {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .subsection {
+            margin-bottom: 2rem;
+        }
+
+        .subsection h3 {
+            color: var(--deep-blue);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .subsection p {
+            color: var(--gray-dark);
+            margin-bottom: 1rem;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--deep-blue);
+        }
+
+        input[type="file"],
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--gray);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--light-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.875rem;
+            background: linear-gradient(135deg, var(--light-blue), var(--aqua));
+            color: white;
+            font-weight: 600;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .divider {
+            border: none;
+            border-top: 2px solid var(--gray);
+            margin: 2rem 0;
+        }
+
+        #uploadStatus {
+            font-weight: bold;
+            margin-top: 0.5rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        #sugestoes {
+            display: none;
+            position: absolute;
+            border: 2px solid var(--light-blue);
+            background-color: white;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        #sugestoes div {
+            padding: 0.75rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--gray);
+            transition: background 0.2s ease;
+        }
+
+        #sugestoes div:hover {
+            background-color: var(--gray-light);
+        }
+
+        #camposDinamicos .form-group {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        #descricaoFinal {
+            min-height: 120px;
+            background-color: var(--gray-light);
+            resize: vertical;
+        }
+
+        /* SOBRE SECTION */
+        #sobre {
+			background: transparent;
+            /*background-color: #142157*/
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--light-blue), var(--aqua));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.75rem;
+        }
+
+        .feature-card h3 {
+            color: var(--deep-blue);
+            margin-bottom: 0.75rem;
+            font-size: 1.25rem;
+        }
+
+        .feature-card p {
+            color: var(--gray-dark);
+            line-height: 1.6;
+        }			
+		.section-subtitle {
+			  font-size: 1.1rem;
+			  color: var(--white);
+			  margin-top: -2.9 rem;
+			  margin-bottom: 2rem;
+			  font-weight: 500;
+			  text-align: center;
+			  opacity: 0.85;
+			}
+
+
+        /* DEVS SECTION */
+        #devs{
+			/*background: transparent;*/
+            background-color: #0c0a3a
+        }
+		/* Fundo animado da seção Devs */
+		#devs {
+		  position: relative;
+		  overflow: hidden;
+		}
+		.devs-section {
+		  position: relative;
+		  overflow: hidden;
+		  background: transparent;
+		}
+
+		#fundoDevs {
+		  position: absolute;
+		  top: 0;
+		  left: 0;
+		  width: 100%;
+		  height: 100%;
+		  z-index: 0;
+		}
+
+		.conteudo-devs {
+		  position: relative;
+		  z-index: 1;
+		}
+
+
+		#fundoDevs {
+		  position: absolute;
+		  top: 0;
+		  left: 0;
+		  width: 100%;
+		  height: 100%;
+		  z-index: 0;
+		}
+
+		#devs .section-container {
+		  position: relative;
+		  z-index: 1;
+		}
+
+
+        .devs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+
+        .dev-card {
+            /*background: rgba(255, 255, 255, 0.95);*/
+            padding: 2.5rem;
+            border-radius: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+			background: #E2E5F0
+        }
+
+        .dev-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .dev-avatar {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, var(--deep-blue), var(--royal-blue));
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+            font-weight: bold;
+        }
+
+        .dev-card h3 {
+            color: var(--deep-blue);
+            font-size: 1.75rem;
+            margin-bottom: 0.7rem;
+        }
+		.dev-card h4 {
+			color: var(--gray-dark);
+			font-size: 1.1rem;
+			margin-bottom: 0.7rem;
+		        }
+
+        .dev-card p {
+            color: var(--gray-dark);
+            font-size: 1.1rem;
+            margin-bottom: 0.7rem;
+			margin-top: -0.7rem;
+        }
+		
+		.dev-subtitle {
+		  font-size: 1rem;
+		  color: var(--white);
+		  margin-top: -0.9rem;  /* Aproxima o subtítulo do texto acima */
+		  margin-bottom: 2rem;
+		  font-weight: 600;
+		}
+		.section-subtitle {
+		  font-size: 1.1rem;
+		  color: var(--white);
+		  margin-top: -3.3rem;
+		  margin-bottom: 2rem;
+		  font-weight: 500;
+		  text-align: center;
+		  opacity: 0.85;
+		}
+
+
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .social-link {
+            width: 40px;
+            height: 40px;
+            background: var(--light-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .social-link:hover {
+            background: var(--aqua);
+            transform: scale(1.1);
+        }
+
+        /* FOOTER */
+        footer {
+            background-color: #030223;
+            color: var(--white);
+            text-align: center;
+            padding: 2rem;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            nav {
+                gap: 1rem;
+            }
+
+            .nav-link {
+                font-size: 0.9rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            #camposDinamicos .form-group {
+                grid-template-columns: 1fr;
+            }
+        }
+		<script src="https://unpkg.com/lucide@latest"></script>
+		.dev-subtitle {
+		  font-size: 1rem;
+		  color: var(--white-blue);
+		  margin-top: -1rem;
+		  margin-bottom: 1rem;
+		  font-weight: 600;
+		}
+		.social-links {
+		  display: flex;
+		  justify-content: center;
+		  gap: 1rem;
+		}
+		.social-link i {
+		  width: 22px;
+		  height: 22px;
+		  color: var(--royal-blue);
+		  transition: transform 0.2s ease, color 0.2s ease;
+		}
+		.social-link:hover i {
+		  transform: scale(1.2);
+		  color: var(--light-blue);
+		}
+		
+
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Gerador de PDM </h1>
-        
-        <section id="upload-section">
-            <h2>Atualizar Base Pdm</h2>
-            <p>Carregue a base pdm aegea 2025 (.xlsx) para atualizar os templates.</p>
-            <input type="file" id="fileInput" accept=".xlsx">
-            <button id="uploadButton">Processar e Atualizar Base</button>
-            <div id="uploadStatus" style="font-weight: bold;"></div>
-        </section>
-        <hr>
-        <section id="pdm-section">
-            <h2>Área do PDM</h2>
-            <div class="search-container">
-                <label for="classeInput">Buscar Classe de Material:</label>
-                <input type="text" id="classeInput" placeholder="Comece a digitar o nome da classe..." autocomplete="off">
-                <div id="sugestoes"></div>
+    <!-- HEADER -->
+    <header>
+        <div class="header-container">
+			<a href="#gerador" class="logo">
+				<div class="logo-container">
+				    <img src="https://parsers.vc/logo/ffcd45e3-f0ce-4ab3-a0be-1908499169d8-1.jpg" alt="Logo 1" class="logo-img">
+				    
+				</div>
+			</a>
+            <nav>
+                <a href="#gerador" class="nav-link active" data-section="gerador">Gerador</a>
+                <a href="#sobre" class="nav-link" data-section="sobre">Sobre</a>
+                <a href="#devs" class="nav-link" data-section="devs">Devs</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- GERADOR SECTION -->
+    <section id="gerador">
+        <div class="section-container">
+            <h2 class="section-title">Gerador de PDM Inteligente</h2>
+            
+            <div class="generator-card">
+                <!-- Upload Section -->
+                <div class="subsection">
+                    <h3>Atualizar Base PDM</h3>
+                    <p>Carregue a base PDM AEGEA 2025 (.xlsx) para atualizar os templates.</p>
+                    <input type="file" id="fileInput" accept=".xlsx">
+                    <button id="uploadButton">Processar e Atualizar Base</button>
+                    <div id="uploadStatus"></div>
+                </div>
+
+                <hr class="divider">
+
+                <!-- PDM Section -->
+                <div class="subsection">
+                    <h3>Área do PDM</h3>
+                    <div class="search-container">
+                        <label for="classeInput">Buscar Classe de Material:</label>
+                        <input type="text" id="classeInput" placeholder="Comece a digitar o nome da classe..." autocomplete="off">
+                        <div id="sugestoes"></div>
+                    </div>
+                    
+                    <div id="camposDinamicos"></div>
+                    <button id="gerarButton" style="display:none;">Gerar Descrição Longa</button>
+                    
+                    <label for="descricaoFinal" style="margin-top: 1rem;">Descrição Longa Gerada:</label>
+                    <textarea id="descricaoFinal" readonly placeholder="A descrição final aparecerá aqui..."></textarea>
+                </div>
             </div>
+        </div>
+    </section>
+
+    <!-- SOBRE SECTION -->
+    <section id="sobre">
+        <div class="section-container">
+            <h2 class="section-title">Sobre o Gerador</h2>
+			<p class="section-subtitle">Funcionalidades</p>
             
-            <div id="camposDinamicos"></div>
-            <button id="gerarButton" style="display:none;">Gerar Descrição Longa</button>
-            
-            <label for="descricaoFinal" style="margin-top: 1rem;">Descrição Longa Gerada:</label>
-            <textarea id="descricaoFinal" readonly placeholder="A descrição final aparecerá aqui..."></textarea>
-        </section>
-    </div>
-
-<script>
-    // --- ELEMENTOS DA PÁGINA ---
-    const fileInput = document.getElementById('fileInput');
-    const uploadButton = document.getElementById('uploadButton');
-    const uploadStatus = document.getElementById('uploadStatus');
-    const classeInput = document.getElementById('classeInput');
-    const sugestoesDiv = document.getElementById('sugestoes');
-    const camposDinamicos = document.getElementById('camposDinamicos');
-    const gerarButton = document.getElementById('gerarButton');
-    const descricaoFinal = document.getElementById('descricaoFinal');
-    let classeSelecionada = '';
-
-    // --- LÓGICA DE UPLOAD COM REDIRECIONAMENTO ---
-    uploadButton.addEventListener('click', () => {
-        const arquivo = fileInput.files[0];
-        if (!arquivo) {
-            uploadStatus.textContent = 'Por favor, selecione um arquivo.';
-            uploadStatus.style.color = 'red';
-            return;
-        }
-        const formData = new FormData();
-        formData.append('arquivo', arquivo);
-        uploadStatus.textContent = 'Enviando e processando...';
-        uploadStatus.style.color = 'blue';
-
-        fetch('/admin/upload', { method: 'POST', body: formData })
-            .then(response => response.text().then(text => ({ ok: response.ok, text })))
-            .then(({ ok, text }) => {
-                uploadStatus.textContent = text;
-                uploadStatus.style.color = ok ? 'green' : 'red';
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Velocidade</h3>
+                    <p>Gere descrições completas em segundos, economizando horas de trabalho manual.</p>
+                </div>
                 
-                // ### LÓGICA DE REDIRECIONAMENTO ADICIONADA AQUI ###
-                if (ok) {
-                    uploadStatus.textContent += ' A página será recarregada em 3 segundos...';
-                    setTimeout(() => {
-                        window.location.href = '/'; // Recarrega a página principal
-                    }, 3000); // 3 segundos
+                <div class="feature-card">
+                    <div class="feature-icon">✓</div>
+                    <h3>Padronização</h3>
+                    <p>Garanta consistência em todas as descrições de materiais seguindo templates aprovados.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Precisão</h3>
+                    <p>Reduza erros com validação automática e campos estruturados.</p>
+                </div>
+                
+                
+            </div>
+        </div>
+    </section>
+
+   
+	<!-- DEVS SECTION -->
+	<section id="devs" class="devs-section">
+	<canvas id="fundoDevs"></canvas>
+	<div class="conteudo-devs">
+	  <div class="section-container">
+	    <h2 class="section-title">Desenvolvedores</h2>
+		<p class="section-subtitle">Conheça nossa equipe!</p>
+
+	    <div class="devs-grid">
+	      <!-- Card Júlia -->
+	      <div class="dev-card">
+	        <div class="dev-avatar">J</div>
+	        <h3>Júlia Neris</h3>
+	        <h4>Analista de Dados - Intern</h4>
+	        <p>Dados Mestre</p>
+
+	        <div class="social-links">
+	          <a href="https://www.linkedin.com/in/j%C3%BAlia-barbosa-neris/" target="_blank" rel="noopener noreferrer" class="social-link" title="LinkedIn"><i data-lucide="linkedin"></i></a>
+	          <a href="https://github.com/julia-neris" target="_blank" rel="noopener noreferrer" class="social-link" title="GitHub"><i data-lucide="github"></i></a>
+	          <a href="mailto:julia.neris1708@email.com" class="social-link" title="Email"><i data-lucide="mail"></i></a>
+	        </div>
+	      </div>
+
+	      <!-- Card Petter -->
+	      <div class="dev-card">
+	        <div class="dev-avatar">P</div>
+	        <h3>Petter Dellis</h3>
+	        <h4>Analista de Dados</h4>
+			<p>Dados Mestre</p>
+
+	        <div class="social-links">
+	          <a href="https://www.linkedin.com/in/petter-junior-164036219/" target="_blank" rel="noopener noreferrer" class="social-link" title="LinkedIn"><i data-lucide="linkedin"></i></a>
+	          <a href="https://github.com/petter654" target="_blank" rel="noopener noreferrer" class="social-link" title="GitHub"><i data-lucide="github"></i></a>
+	          <a href="mailto:petter.dellis@email.com" class="social-link" title="Email"><i data-lucide="mail"></i></a>
+	        </div>
+	      </div>
+	    </div>
+	  </div>
+	  </div>
+	</section>
+
+
+    <!-- FOOTER -->
+    <footer>
+        <p>&copy; 2025 AEGEA - Todos os direitos reservados</p>
+    </footer>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // --- ELEMENTOS DA PÁGINA ---
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const classeInput = document.getElementById('classeInput');
+        const sugestoesDiv = document.getElementById('sugestoes');
+        const camposDinamicos = document.getElementById('camposDinamicos');
+        const gerarButton = document.getElementById('gerarButton');
+        const descricaoFinal = document.getElementById('descricaoFinal');
+        let classeSelecionada = '';
+
+        // --- NAVEGAÇÃO ATIVA ---
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('section');
+
+        function updateActiveNav() {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (scrollY >= sectionTop - 200) {
+                    current = section.getAttribute('id');
                 }
-            })
-            .catch(err => {
-                uploadStatus.textContent = 'Erro ao processar o arquivo.';
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-section') === current) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', updateActiveNav);
+
+        // --- LÓGICA DE UPLOAD COM REDIRECIONAMENTO ---
+        uploadButton.addEventListener('click', () => {
+            const arquivo = fileInput.files[0];
+            if (!arquivo) {
+                uploadStatus.textContent = 'Por favor, selecione um arquivo.';
                 uploadStatus.style.color = 'red';
-                console.error(err);
-            });
-    });
+                uploadStatus.style.background = '#fee2e2';
+                return;
+            }
+            const formData = new FormData();
+            formData.append('arquivo', arquivo);
+            uploadStatus.textContent = 'Enviando e processando...';
+            uploadStatus.style.color = '#1e40af';
+            uploadStatus.style.background = '#dbeafe';
 
-    // --- LÓGICA DE BUSCA DO ANALISTA (sem alterações) ---
-    classeInput.addEventListener('keyup', (e) => {
-        const query = e.target.value;
-        if (query.length < 3) {
+            fetch('/admin/upload', { method: 'POST', body: formData })
+                .then(response => response.text().then(text => ({ ok: response.ok, text })))
+                .then(({ ok, text }) => {
+                    uploadStatus.textContent = text;
+                    uploadStatus.style.color = ok ? '#059669' : '#dc2626';
+                    uploadStatus.style.background = ok ? '#d1fae5' : '#fee2e2';
+                    
+                    if (ok) {
+                        uploadStatus.textContent += ' A página será recarregada em 3 segundos...';
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 3000);
+                    }
+                })
+                .catch(err => {
+                    uploadStatus.textContent = 'Erro ao processar o arquivo.';
+                    uploadStatus.style.color = '#dc2626';
+                    uploadStatus.style.background = '#fee2e2';
+                    console.error(err);
+                });
+        });
+
+        // --- LÓGICA DE BUSCA DO ANALISTA ---
+        classeInput.addEventListener('keyup', (e) => {
+            const query = e.target.value;
+            if (query.length < 3) {
+                sugestoesDiv.style.display = 'none';
+                return;
+            }
+            fetch(`/sugerirClasses?query=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(sugestoes => {
+                    sugestoesDiv.innerHTML = '';
+                    if (sugestoes.length > 0) {
+                        sugestoesDiv.style.display = 'block';
+                        sugestoes.forEach(s => {
+                            const item = document.createElement('div');
+                            item.textContent = s;
+                            item.addEventListener('click', () => selecionarClasse(s));
+                            sugestoesDiv.appendChild(item);
+                        });
+                    } else {
+                        sugestoesDiv.style.display = 'none';
+                    }
+                });
+        });
+
+        function selecionarClasse(classe) {
+            classeSelecionada = classe;
+            classeInput.value = classe;
             sugestoesDiv.style.display = 'none';
-            return;
+            fetch(`/getAtributos?classe=${encodeURIComponent(classe)}`)
+                .then(response => response.json())
+                .then(atributos => {
+                    camposDinamicos.innerHTML = '';
+                    if (atributos && atributos.length > 0) {
+                        atributos.forEach(attr => {
+                            const group = document.createElement('div');
+                            group.className = 'form-group';
+                            const label = document.createElement('label');
+                            label.textContent = `${attr}:`;
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.dataset.atributo = attr;
+                            group.appendChild(label);
+                            group.appendChild(input);
+                            camposDinamicos.appendChild(group);
+                        });
+                        gerarButton.style.display = 'block';
+                    }
+                });
         }
-        fetch(`/sugerirClasses?query=${encodeURIComponent(query)}`)
-            .then(response => response.json())
-            .then(sugestoes => {
-                sugestoesDiv.innerHTML = '';
-                if (sugestoes.length > 0) {
-                    sugestoesDiv.style.display = 'block';
-                    sugestoes.forEach(s => {
-                        const item = document.createElement('div');
-                        item.textContent = s;
-                        item.addEventListener('click', () => selecionarClasse(s));
-                        sugestoesDiv.appendChild(item);
-                    });
-                } else {
-                    sugestoesDiv.style.display = 'none';
-                }
+
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.search-container')) {
+                sugestoesDiv.style.display = 'none';
+            }
+        });
+
+        gerarButton.addEventListener('click', () => {
+            const inputs = camposDinamicos.querySelectorAll('input[type="text"]');
+            const valores = {};
+            inputs.forEach(input => {
+                valores[input.dataset.atributo] = input.value;
             });
-    });
+            
+            const payload = {
+                classe: classeSelecionada,
+                valores: valores
+            };
+            console.log("Payload a ser enviado para o backend:", payload);
 
-    function selecionarClasse(classe) {
-        classeSelecionada = classe;
-        classeInput.value = classe;
-        sugestoesDiv.style.display = 'none';
-        fetch(`/getAtributos?classe=${encodeURIComponent(classe)}`)
+            fetch('/gerarDescricao', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
             .then(response => response.json())
-            .then(atributos => {
-                camposDinamicos.innerHTML = '';
-                if (atributos && atributos.length > 0) {
-                    atributos.forEach(attr => {
-                        const group = document.createElement('div'); group.className = 'form-group';
-                        const label = document.createElement('label'); label.textContent = `${attr}:`;
-                        const input = document.createElement('input'); input.type = 'text'; input.dataset.atributo = attr;
-                        group.appendChild(label); group.appendChild(input);
-                        camposDinamicos.appendChild(group);
-                    });
-                    gerarButton.style.display = 'block';
-                }
+            .then(data => {
+                descricaoFinal.value = data.descricao;
             });
-    }
+        });
+    </script>
+	<script src="https://unpkg.com/lucide@latest"></script>
+	<script>
+	  lucide.createIcons();
+	</script>
+	<!-- FUNDO INTERATIVO DA SEÇÃO DE DEVS -->
+	<script>
+	document.addEventListener("DOMContentLoaded", () => {
+	  const canvas = document.getElementById('fundoDevs');
+	  const ctx = canvas.getContext('2d');
 
-    document.addEventListener('click', function(event) {
-        if (!event.target.closest('.search-container')) {
-            sugestoesDiv.style.display = 'none';
-        }
-    });
+	  function ajustarTamanho() {
+	    canvas.width = canvas.offsetWidth;
+	    canvas.height = canvas.offsetHeight;
+	  }
+	  ajustarTamanho();
+	  window.addEventListener('resize', ajustarTamanho);
 
-	gerarButton.addEventListener('click', () => {
-	    const inputs = camposDinamicos.querySelectorAll('input[type="text"]');
-	    const valores = {};
-	    inputs.forEach(input => {
-	        valores[input.dataset.atributo] = input.value;
-	    });
-	    
-	    const payload = {
-	        classe: classeSelecionada,
-	        valores: valores
-	    };
-	    console.log("Payload a ser enviado para o backend:", payload);
+	  const mouse = { x: null, y: null, radius: 150 };
+	  window.addEventListener('mousemove', (e) => {
+	    const rect = canvas.getBoundingClientRect();
+	    mouse.x = e.clientX - rect.left;
+	    mouse.y = e.clientY - rect.top;
+	  });
 
-	    fetch('/gerarDescricao', {
-	        method: 'POST',
-	        headers: { 'Content-Type': 'application/json' },
-	        body: JSON.stringify(payload)
-	    })
-	    .then(response => response.json())
-	    .then(data => {
-	        descricaoFinal.value = data.descricao;
-	    });
+	  class Particula {
+	    constructor() {
+	      this.x = Math.random() * canvas.width;
+	      this.y = Math.random() * canvas.height;
+	      this.velX = (Math.random() - 0.5) * 1.5;
+	      this.velY = (Math.random() - 0.5) * 1.5;
+	      this.size = 2;
+	    }
+
+	    desenhar() {
+	      ctx.fillStyle = 'rgba(173, 216, 230, 0.8)';
+	      ctx.beginPath();
+	      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+	      ctx.fill();
+	    }
+
+	    atualizar() {
+	      this.x += this.velX;
+	      this.y += this.velY;
+	      if (this.x < 0 || this.x > canvas.width) this.velX *= -1;
+	      if (this.y < 0 || this.y > canvas.height) this.velY *= -1;
+
+	      const dx = mouse.x - this.x;
+	      const dy = mouse.y - this.y;
+	      const distancia = Math.sqrt(dx * dx + dy * dy);
+	      if (distancia < mouse.radius) {
+	        this.x -= (dx / distancia) * 3;
+	        this.y -= (dy / distancia) * 3;
+	      }
+	      this.desenhar();
+	    }
+	  }
+
+	  let particulas = [];
+	  function inicializar() {
+	    particulas = [];
+	    for (let i = 0; i < 150; i++) {
+	      particulas.push(new Particula());
+	    }
+	  }
+	  inicializar();
+
+	  function conectar() {
+	    for (let a = 0; a < particulas.length; a++) {
+	      for (let b = a; b < particulas.length; b++) {
+	        const dx = particulas[a].x - particulas[b].x;
+	        const dy = particulas[a].y - particulas[b].y;
+	        const distancia = dx * dx + dy * dy;
+	        if (distancia < 9000) {
+	          ctx.strokeStyle = 'rgba(173, 216, 230, 0.2)';
+	          ctx.lineWidth = 1;
+	          ctx.beginPath();
+	          ctx.moveTo(particulas[a].x, particulas[a].y);
+	          ctx.lineTo(particulas[b].x, particulas[b].y);
+	          ctx.stroke();
+	        }
+	      }
+	    }
+	  }
+
+	  function animar() {
+	    ctx.clearRect(0, 0, canvas.width, canvas.height);
+	    particulas.forEach((p) => p.atualizar());
+	    conectar();
+	    requestAnimationFrame(animar);
+	  }
+	  animar();
 	});
-</script>
+	</script>
+
+	
 </body>
 </html>
